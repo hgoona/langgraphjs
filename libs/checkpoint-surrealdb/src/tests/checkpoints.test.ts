@@ -12,9 +12,9 @@ import {
 	beforeAll,
 	type TestOptions,
 } from "vitest";
-import { TestSdb1 } from "$lib/server/sdbTestDb";
-import { SdbQueryClass } from "$lib/server/sdbUtils";
-import { SurrealdbSaver } from "./sdbSaver2";
+import { TestSdb1 } from "../utils/sdbTestDb.ts";
+import { SdbQueryClass } from "../utils/sdbQueryUtils.ts";
+import { SurrealdbSaver } from "../index.ts";
 
 
 const checkpoint1: Checkpoint = {
@@ -57,11 +57,11 @@ const checkpoint2: Checkpoint = {
 
 // const postgresSavers: PostgresSaver[] = [];
 
-describe("Test SDBSaver2", () => {
+describe("Test SurrealdbSaver", () => {
 	/** 
 	 * New instance of SurrealdbSaver with (test) DB attached 
 	 */
-	let SurrealdbSaver: SDBSaver2
+	let SurrealdbSaver: SurrealdbSaver
 
 	/**
 	 * SDBTester is a SdbQueryClass 

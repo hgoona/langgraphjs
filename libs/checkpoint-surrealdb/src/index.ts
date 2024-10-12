@@ -1,5 +1,6 @@
-import { debugLog } from "$lib/debugLog";
-import type { SdbQueryClass } from "$lib/server/sdbUtils";
+import { debugLog } from "./utils/debugLog.ts";
+import type { SdbQueryClass } from "./utils/sdbQueryUtils.ts";
+
 import type { RunnableConfig } from "@langchain/core/runnables";
 import {
 	BaseCheckpointSaver,
@@ -41,10 +42,6 @@ const debug_checkpointer = true
 // // const debug_output = false
 
 const serviceName = "SdbSaver"
-
-/** Option to Serialize or not */
-const SERIALIZE = true;
-// const SERIALIZE = false;
 
 
 
