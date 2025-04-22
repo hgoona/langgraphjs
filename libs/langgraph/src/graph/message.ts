@@ -17,7 +17,7 @@ export type Messages =
  * instances.
  */
 export function messagesStateReducer(
-  left: BaseMessage[],
+  left: Messages,
   right: Messages
 ): BaseMessage[] {
   const leftArray = Array.isArray(left) ? left : [left];
@@ -43,15 +43,16 @@ export function messagesStateReducer(
     }
   }
   // merge
-  const leftIdxById = new Map(leftMessages.map((m, i) => [m.id, i]));
   const merged = [...leftMessages];
+  const mergedById = new Map(merged.map((m, i) => [m.id, i]));
   const idsToRemove = new Set();
   for (const m of rightMessages) {
-    const existingIdx = leftIdxById.get(m.id);
+    const existingIdx = mergedById.get(m.id);
     if (existingIdx !== undefined) {
       if (m._getType() === "remove") {
         idsToRemove.add(m.id);
       } else {
+        idsToRemove.delete(m.id);
         merged[existingIdx] = m;
       }
     } else {
@@ -60,6 +61,7 @@ export function messagesStateReducer(
           `Attempting to delete a message with an ID that doesn't exist ('${m.id}')`
         );
       }
+      mergedById.set(m.id, merged.length);
       merged.push(m);
     }
   }

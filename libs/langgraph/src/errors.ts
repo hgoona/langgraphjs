@@ -1,8 +1,32 @@
-import { Interrupt } from "./constants.js";
+import { Command, Interrupt } from "./constants.js";
 
-export class GraphRecursionError extends Error {
-  constructor(message?: string) {
-    super(message);
+export type BaseLangGraphErrorFields = {
+  lc_error_code?: string;
+};
+
+// TODO: Merge with base LangChain error class when we drop support for core@0.2.0
+export class BaseLangGraphError extends Error {
+  lc_error_code?: string;
+
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    let finalMessage = message ?? "";
+    if (fields?.lc_error_code) {
+      finalMessage = `${finalMessage}\n\nTroubleshooting URL: https://js.langchain.com/docs/troubleshooting/errors/${fields.lc_error_code}/\n`;
+    }
+    super(finalMessage);
+    this.lc_error_code = fields?.lc_error_code;
+  }
+}
+
+export class GraphBubbleUp extends BaseLangGraphError {
+  get is_bubble_up() {
+    return true;
+  }
+}
+
+export class GraphRecursionError extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
     this.name = "GraphRecursionError";
   }
 
@@ -11,9 +35,9 @@ export class GraphRecursionError extends Error {
   }
 }
 
-export class GraphValueError extends Error {
-  constructor(message?: string) {
-    super(message);
+export class GraphValueError extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
     this.name = "GraphValueError";
   }
 
@@ -22,13 +46,13 @@ export class GraphValueError extends Error {
   }
 }
 
-export class GraphInterrupt extends Error {
+export class GraphInterrupt extends GraphBubbleUp {
   interrupts: Interrupt[];
 
-  constructor(interrupts: Interrupt[] = []) {
-    super(JSON.stringify(interrupts, null, 2));
+  constructor(interrupts?: Interrupt[], fields?: BaseLangGraphErrorFields) {
+    super(JSON.stringify(interrupts, null, 2), fields);
     this.name = "GraphInterrupt";
-    this.interrupts = interrupts;
+    this.interrupts = interrupts ?? [];
   }
 
   static get unminifiable_name() {
@@ -38,13 +62,17 @@ export class GraphInterrupt extends Error {
 
 /** Raised by a node to interrupt execution. */
 export class NodeInterrupt extends GraphInterrupt {
-  constructor(message: string) {
-    super([
-      {
-        value: message,
-        when: "during",
-      },
-    ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(message: any, fields?: BaseLangGraphErrorFields) {
+    super(
+      [
+        {
+          value: message,
+          when: "during",
+        },
+      ],
+      fields
+    );
     this.name = "NodeInterrupt";
   }
 
@@ -53,21 +81,44 @@ export class NodeInterrupt extends GraphInterrupt {
   }
 }
 
-export function isGraphInterrupt(
-  e?: GraphInterrupt | Error
-): e is GraphInterrupt {
+export class ParentCommand extends GraphBubbleUp {
+  command: Command;
+
+  constructor(command: Command) {
+    super();
+    this.name = "ParentCommand";
+    this.command = command;
+  }
+
+  static get unminifiable_name() {
+    return "ParentCommand";
+  }
+}
+
+export function isParentCommand(e?: unknown): e is ParentCommand {
+  return (
+    e !== undefined &&
+    (e as ParentCommand).name === ParentCommand.unminifiable_name
+  );
+}
+
+export function isGraphBubbleUp(e?: unknown): e is GraphBubbleUp {
+  return e !== undefined && (e as GraphBubbleUp).is_bubble_up === true;
+}
+
+export function isGraphInterrupt(e?: unknown): e is GraphInterrupt {
   return (
     e !== undefined &&
     [
       GraphInterrupt.unminifiable_name,
       NodeInterrupt.unminifiable_name,
-    ].includes(e.name)
+    ].includes((e as Error).name)
   );
 }
 
-export class EmptyInputError extends Error {
-  constructor(message?: string) {
-    super(message);
+export class EmptyInputError extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
     this.name = "EmptyInputError";
   }
 
@@ -76,9 +127,9 @@ export class EmptyInputError extends Error {
   }
 }
 
-export class EmptyChannelError extends Error {
-  constructor(message?: string) {
-    super(message);
+export class EmptyChannelError extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
     this.name = "EmptyChannelError";
   }
 
@@ -87,9 +138,9 @@ export class EmptyChannelError extends Error {
   }
 }
 
-export class InvalidUpdateError extends Error {
-  constructor(message?: string) {
-    super(message);
+export class InvalidUpdateError extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
     this.name = "InvalidUpdateError";
   }
 
@@ -97,3 +148,57 @@ export class InvalidUpdateError extends Error {
     return "InvalidUpdateError";
   }
 }
+
+/**
+ * @deprecated This exception type is no longer thrown.
+ */
+export class MultipleSubgraphsError extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
+    this.name = "MultipleSubgraphError";
+  }
+
+  static get unminifiable_name() {
+    return "MultipleSubgraphError";
+  }
+}
+
+export class UnreachableNodeError extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
+    this.name = "UnreachableNodeError";
+  }
+
+  static get unminifiable_name() {
+    return "UnreachableNodeError";
+  }
+}
+
+/**
+ * Exception raised when an error occurs in the remote graph.
+ */
+export class RemoteException extends BaseLangGraphError {
+  constructor(message?: string, fields?: BaseLangGraphErrorFields) {
+    super(message, fields);
+    this.name = "RemoteException";
+  }
+
+  static get unminifiable_name() {
+    return "RemoteException";
+  }
+}
+
+/**
+ * Used for subgraph detection.
+ */
+export const getSubgraphsSeenSet = () => {
+  if (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any)[Symbol.for("LG_CHECKPOINT_SEEN_NS_SET")] === undefined
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any)[Symbol.for("LG_CHECKPOINT_SEEN_NS_SET")] = new Set();
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (globalThis as any)[Symbol.for("LG_CHECKPOINT_SEEN_NS_SET")];
+};

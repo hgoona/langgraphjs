@@ -12,12 +12,13 @@ import { BaseChannel } from "./base.js";
 export class LastValue<Value> extends BaseChannel<Value, Value, Value> {
   lc_graph_name = "LastValue";
 
-  value?: Value;
+  // value is an array so we don't misinterpret an update to undefined as no write
+  value: [Value] | [] = [];
 
   fromCheckpoint(checkpoint?: Value) {
     const empty = new LastValue<Value>();
     if (checkpoint) {
-      empty.value = checkpoint;
+      empty.value = [checkpoint];
     }
 
     return empty as this;
@@ -29,26 +30,29 @@ export class LastValue<Value> extends BaseChannel<Value, Value, Value> {
     }
     if (values.length !== 1) {
       throw new InvalidUpdateError(
-        "LastValue can only receive one value per step."
+        "LastValue can only receive one value per step.",
+        {
+          lc_error_code: "INVALID_CONCURRENT_GRAPH_UPDATE",
+        }
       );
     }
 
     // eslint-disable-next-line prefer-destructuring
-    this.value = values[values.length - 1];
+    this.value = [values[values.length - 1]];
     return true;
   }
 
   get(): Value {
-    if (this.value === undefined) {
+    if (this.value.length === 0) {
       throw new EmptyChannelError();
     }
-    return this.value;
+    return this.value[0];
   }
 
   checkpoint(): Value {
-    if (this.value === undefined) {
+    if (this.value.length === 0) {
       throw new EmptyChannelError();
     }
-    return this.value;
+    return this.value[0];
   }
 }

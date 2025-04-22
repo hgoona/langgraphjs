@@ -55,7 +55,7 @@ export class ChannelRead<
       config.configurable?.[CONFIG_KEY_READ];
     if (!read) {
       throw new Error(
-        `Runnable ${this} is not configured with a read function. Make sure to call in the context of a Pregel process`
+        "Runnable is not configured with a read function. Make sure to call in the context of a Pregel process"
       );
     }
     if (mapper) {
@@ -83,6 +83,8 @@ interface PregelNodeArgs<RunInput, RunOutput>
   config?: RunnableConfig;
   metadata?: Record<string, unknown>;
   retryPolicy?: RetryPolicy;
+  subgraphs?: Runnable[];
+  ends?: string[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,6 +119,10 @@ export class PregelNode<
 
   retryPolicy?: RetryPolicy;
 
+  subgraphs?: Runnable[];
+
+  ends?: string[];
+
   constructor(fields: PregelNodeArgs<RunInput, RunOutput>) {
     const {
       channels,
@@ -128,6 +134,8 @@ export class PregelNode<
       metadata,
       retryPolicy,
       tags,
+      subgraphs,
+      ends,
     } = fields;
     const mergedTags = [
       ...(fields.config?.tags ? fields.config.tags : []),
@@ -154,6 +162,8 @@ export class PregelNode<
     this.metadata = metadata ?? this.metadata;
     this.tags = mergedTags;
     this.retryPolicy = retryPolicy;
+    this.subgraphs = subgraphs;
+    this.ends = ends;
   }
 
   getWriters(): Array<Runnable> {
@@ -189,12 +199,14 @@ export class PregelNode<
         first: writers[0],
         middle: writers.slice(1, writers.length - 1),
         last: writers[writers.length - 1],
+        omitSequenceTags: true,
       });
     } else if (writers.length > 0) {
       return new RunnableSequence({
         first: this.bound,
         middle: writers.slice(0, writers.length - 1),
         last: writers[writers.length - 1],
+        omitSequenceTags: true,
       });
     } else {
       return this.bound;
@@ -232,7 +244,7 @@ export class PregelNode<
         channels: this.channels,
         triggers: this.triggers,
         mapper: this.mapper,
-        writers: [...this.writers, coerceable as ChannelWrite],
+        writers: [...this.writers, coerceable],
         bound: this.bound as unknown as PregelNode<
           RunInput,
           Exclude<NewRunOutput, Error>

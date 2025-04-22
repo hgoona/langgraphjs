@@ -9,14 +9,20 @@ export type CheckpointPendingWrite<TaskId = string> = [
   ...PendingWrite<string>
 ];
 
-export interface CheckpointMetadata {
+/**
+ * Additional details about the checkpoint, including the source, step, writes, and parents.
+ *
+ * @typeParam ExtraProperties - Optional additional properties to include in the metadata.
+ */
+export type CheckpointMetadata<ExtraProperties extends object = object> = {
   /**
    * The source of the checkpoint.
    * - "input": The checkpoint was created from an input to invoke/stream/batch.
    * - "loop": The checkpoint was created from inside the pregel loop.
    * - "update": The checkpoint was created from a manual state update.
+   * - "fork": The checkpoint was created as a copy of another checkpoint.
    */
-  source: "input" | "loop" | "update";
+  source: "input" | "loop" | "update" | "fork";
   /**
    * The step number of the checkpoint.
    * -1 for the first "input" checkpoint.
@@ -35,4 +41,4 @@ export interface CheckpointMetadata {
    * Mapping from checkpoint namespace to checkpoint ID.
    */
   parents: Record<string, string>;
-}
+} & ExtraProperties;

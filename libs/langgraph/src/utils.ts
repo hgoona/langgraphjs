@@ -66,26 +66,33 @@ export class RunnableCallable<I = unknown, O = unknown> extends Runnable<I, O> {
 
   async invoke(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    input: any,
+    input: I,
     options?: Partial<RunnableConfig> | undefined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any> {
+  ): Promise<O> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let returnValue: any;
     const config = ensureLangGraphConfig(options);
+    const mergedConfig = mergeConfigs(this.config, config);
 
     if (this.trace) {
       returnValue = await this._callWithConfig(
         this._tracedInvoke,
         input,
-        mergeConfigs(this.config, config)
+        mergedConfig
       );
     } else {
-      returnValue = await this.func(input, mergeConfigs(this.config, config));
+      returnValue = await AsyncLocalStorageProviderSingleton.runWithConfig(
+        mergedConfig,
+        async () => this.func(input, mergedConfig)
+      );
     }
 
     if (Runnable.isRunnable(returnValue) && this.recurse) {
-      return await returnValue.invoke(input, config);
+      return await AsyncLocalStorageProviderSingleton.runWithConfig(
+        mergedConfig,
+        async () => returnValue.invoke(input, mergedConfig)
+      );
     }
 
     return returnValue;
@@ -169,4 +176,24 @@ export function patchConfigurable(
       },
     };
   }
+}
+
+export function isAsyncGeneratorFunction(
+  val: unknown
+): val is AsyncGeneratorFunction {
+  return (
+    val != null &&
+    typeof val === "function" &&
+    // eslint-disable-next-line no-instanceof/no-instanceof
+    val instanceof Object.getPrototypeOf(async function* () {}).constructor
+  );
+}
+
+export function isGeneratorFunction(val: unknown): val is GeneratorFunction {
+  return (
+    val != null &&
+    typeof val === "function" &&
+    // eslint-disable-next-line no-instanceof/no-instanceof
+    val instanceof Object.getPrototypeOf(function* () {}).constructor
+  );
 }

@@ -1,12 +1,18 @@
+---
+title: Tutorials
+---
+
 # Tutorials
 
-Welcome to the LangGraph Tutorials! These notebooks introduce LangGraph through building various language agents and applications.
+Welcome to the LangGraph.js Tutorials! These notebooks introduce LangGraph through building various language agents and applications.
 
 ## Quick Start
 
 Learn the basics of LangGraph through a comprehensive quick start in which you will build an agent from scratch.
 
 - [Quick Start](quickstart.ipynb)
+- [Common Workflows](workflows/index.md): Overview of the most common workflows using LLMs implemented with LangGraph.
+- [LangGraph Cloud Quick Start](/langgraphjs/cloud/quick_start/): In this tutorial, you will build and deploy an agent to LangGraph Cloud.
 
 ## Use cases
 

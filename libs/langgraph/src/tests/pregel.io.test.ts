@@ -199,7 +199,9 @@ describe("mapInput", () => {
         // do nothing, error will be thrown
         continue;
       }
-    }).toThrow("Input chunk must be an object when inputChannels is an array");
+    }).toThrow(
+      `Input chunk must be an object when "inputChannels" is an array`
+    );
   });
 });
 
@@ -315,6 +317,7 @@ describe("mapOutputUpdates", () => {
         writes: [["someOutputChannelName", 1]],
         triggers: [],
         config: undefined,
+        writers: [],
       },
       {
         id: uuid6(-1),
@@ -326,6 +329,7 @@ describe("mapOutputUpdates", () => {
         config: {
           tags: ["langsmith:hidden"], // this task should be filtered out
         },
+        writers: [],
       },
       {
         name: "task3",
@@ -375,6 +379,7 @@ describe("mapOutputUpdates", () => {
         ],
         triggers: [],
         config: undefined,
+        writers: [],
       },
       {
         id: uuid6(-1),
@@ -387,6 +392,7 @@ describe("mapOutputUpdates", () => {
         ],
         triggers: [],
         config: undefined,
+        writers: [],
       },
     ];
 

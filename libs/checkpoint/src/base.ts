@@ -8,6 +8,8 @@ import type {
 } from "./types.js";
 import {
   ERROR,
+  INTERRUPT,
+  RESUME,
   SCHEDULED,
   type ChannelProtocol,
   type SendProtocol,
@@ -23,7 +25,7 @@ export interface Checkpoint<
   C extends string = string
 > {
   /**
-   * Version number
+   * The version of the checkpoint format. Currently 1
    */
   v: number;
   /**
@@ -203,4 +205,12 @@ export function maxChannelVersion(
 export const WRITES_IDX_MAP: Record<string, number> = {
   [ERROR]: -1,
   [SCHEDULED]: -2,
+  [INTERRUPT]: -3,
+  [RESUME]: -4,
 };
+
+export function getCheckpointId(config: RunnableConfig): string {
+  return (
+    config.configurable?.checkpoint_id || config.configurable?.thread_ts || ""
+  );
+}
