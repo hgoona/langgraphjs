@@ -1,0 +1,27 @@
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "cache": false
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "outputs": []
+    },
+    "migrate": {
+      "dependsOn": ["build"],
+      "outputs": []
+    }
+  },
+  "global": {
+    "cache": {
+      "paths": ["node_modules/**", ".turbo/**"]
+    }
+  }
+}

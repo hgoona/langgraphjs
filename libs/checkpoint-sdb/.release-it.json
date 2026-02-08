@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "after:bump": [
+      "git add .",
+      "git commit -m 'chore(release): release version ${version}'",
+      "git push"
+    ],
+    "after:release": [
+      "npm publish"
+    ]
+  },
+  "git": {
+    "requireCleanWorkingDir": true,
+    "requireUpstream": true
+  },
+  "npm": {
+    "publish": true
+  },
+  "git": {
+    "tag": true
+  }
+}
